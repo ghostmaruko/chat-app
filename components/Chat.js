@@ -1,8 +1,31 @@
 import React, { useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { GiftedChat } from "react-native-gifted-chat";
 
 const Chat = ({ route, navigation }) => {
   const { name, bgColor } = route.params;
+  const [messages, setMessages] = React.useState([]);
+
+  useEffect(() => {
+    setMessages([
+      {
+        _id: 1,
+        text: `Welcome to the chat, ${name || "Guest"}!`,
+        createdAt: new Date(),
+        user: {
+          _id: 2,
+          name: "Chat Bot",
+          avatar: "https://placeimg.com/140/140/any",
+        },
+      },
+      {
+        _id: 2,
+        text: "This is a system message.",
+        createdAt: new Date(),
+        system: true,
+      },
+    ]);
+  }, []);
 
   // imposta il titolo dinamico
   useEffect(() => {
@@ -10,10 +33,13 @@ const Chat = ({ route, navigation }) => {
   }, [navigation, name]);
 
   return (
-    <View style={[styles.container, { backgroundColor: bgColor }]}>
-      <Text style={styles.text}>Hello {name || "Guest"}!</Text>
-      <Text style={styles.text}>This is your chat room.</Text>
-    </View>
+    <GiftedChat
+      messages={messages}
+      onSend={(newMessages) =>
+        setMessages((prev) => GiftedChat.append(prev, newMessages))
+      }
+      user={{ _id: 1 }}
+    />
   );
 };
 
