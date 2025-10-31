@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ImageBackground,
 } from "react-native";
+import tinycolor from "tinycolor2"; // npm install tinycolor2
 
 const backgroundImage = require("../assets/Background Image.png");
 
@@ -16,16 +17,19 @@ const Start = ({ navigation }) => {
   const [name, setName] = useState("");
   const [bgColor, setBgColor] = useState(colors[0]);
 
+  // calcola se lo sfondo è scuro o chiaro
+  const isDark = tinycolor(bgColor).isDark();
+
   return (
     <ImageBackground source={backgroundImage} style={styles.background}>
       {/* Title */}
       <Text style={styles.title}>Chat App</Text>
 
-      {/* Box */}
-      <View style={styles.box}>
+      {/* Main Box */}
+      <View style={[styles.box, { backgroundColor: "rgba(255,255,255,0.9)" }]}>
         {/* Name input */}
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: "#000" }]} // ✅ sempre testo nero
           value={name}
           onChangeText={setName}
           placeholder="Your Name"
@@ -44,23 +48,31 @@ const Start = ({ navigation }) => {
                 bgColor === color && styles.selected,
               ]}
               onPress={() => setBgColor(color)}
+              activeOpacity={0.8}
             />
           ))}
         </View>
 
         {/* Button */}
         <TouchableOpacity
-          style={styles.button}
+          style={[
+            styles.button,
+            {
+              backgroundColor: isDark ? "#5E60CE" : "#333",
+            },
+          ]}
           onPress={() => navigation.navigate("Chat", { name, bgColor })}
+          activeOpacity={0.8}
         >
-          <Text style={styles.buttonText}>Start Chatting</Text>
+          <Text style={[styles.buttonText, { color: "#FFF" }]}>
+            Start Chatting
+          </Text>
         </TouchableOpacity>
       </View>
     </ImageBackground>
   );
 };
 
-// === STYLES ===
 const styles = StyleSheet.create({
   background: {
     flex: 1,
@@ -69,16 +81,23 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 45,
-    fontWeight: "600",
-    color: "#fff",
+    fontWeight: "700",
+    color: "#FFF",
     marginBottom: 40,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
   },
   box: {
-    backgroundColor: "white",
     width: "88%",
     padding: 20,
-    borderRadius: 10,
+    borderRadius: 15,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 5,
   },
   input: {
     width: "100%",
@@ -87,12 +106,12 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 15,
     fontSize: 16,
-    color: "#757083",
   },
   chooseColor: {
     alignSelf: "flex-start",
     marginTop: 20,
     color: "#757083",
+    fontSize: 14,
   },
   colorWrapper: {
     flexDirection: "row",
@@ -104,20 +123,20 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#ccc",
   },
   selected: {
-    borderWidth: 2,
-    borderColor: "#000",
+    borderWidth: 3,
+    borderColor: "#5E60CE",
   },
   button: {
-    backgroundColor: "#757083",
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 5,
     marginTop: 10,
   },
   buttonText: {
-    color: "#fff",
     fontSize: 16,
     fontWeight: "600",
   },
