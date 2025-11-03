@@ -11,6 +11,7 @@ import {
 import { GiftedChat, Bubble } from "react-native-gifted-chat";
 import tinycolor from "tinycolor2";
 import CustomActions from "./CustomActions";
+import { database } from "../firebase/firebaseConfig"; // 🔹 compat
 
 const Chat = ({ route, navigation }) => {
   const { name = "Guest", bgColor = "#FFFFFF" } = route.params || {};
@@ -28,6 +29,7 @@ const Chat = ({ route, navigation }) => {
   useEffect(() => {
     navigation.setOptions({ title: name });
 
+    // Messaggi iniziali
     setMessages([
       {
         _id: 2,
@@ -46,30 +48,41 @@ const Chat = ({ route, navigation }) => {
         },
       },
     ]);
+
+    // 🔹 Sottoscrizione ai messaggi da Firebase
+    const messagesRef = database.ref("messages");
+    const handleValue = (snapshot) => {
+      const data = snapshot.val() || {};
+      const messagesArray = Object.keys(data)
+        .map((key) => ({
+          _id: key,
+          text: data[key].text,
+          createdAt: new Date(data[key].createdAt),
+          user: {
+            _id: data[key].userId,
+            name: data[key].userId === 1 ? name : "Guest",
+          },
+        }))
+        .sort((a, b) => b.createdAt - a.createdAt);
+      setMessages(messagesArray);
+    };
+
+    messagesRef.on("value", handleValue);
+
+    // Cleanup
+    return () => messagesRef.off("value", handleValue);
   }, []);
 
   const onSend = (newMessages = []) => {
     setMessages((prev) => GiftedChat.append(prev, newMessages));
-  };
 
-  // 🔹 Mostra link cliccabile se il messaggio contiene posizione
-  const renderCustomView = (props) => {
-    const { currentMessage } = props;
-
-    if (currentMessage?.location && currentMessage?.mapUrl) {
-      return (
-        <TouchableOpacity
-          style={styles.mapLinkContainer}
-          onPress={() => Linking.openURL(currentMessage.mapUrl)}
-        >
-          <Text style={styles.mapLinkText}>
-            📍 Apri la mia posizione su Google Maps
-          </Text>
-        </TouchableOpacity>
-      );
-    }
-
-    return null;
+    newMessages.forEach((msg) => {
+      database.ref("messages").push({
+        text: msg.text,
+        userId: 1,
+        createdAt: msg.createdAt.getTime(),
+      });
+    });
   };
 
   const renderBubble = (props) => (
@@ -96,6 +109,23 @@ const Chat = ({ route, navigation }) => {
     />
   );
 
+  const renderCustomView = (props) => {
+    const { currentMessage } = props;
+    if (currentMessage?.location && currentMessage?.mapUrl) {
+      return (
+        <TouchableOpacity
+          style={styles.mapLinkContainer}
+          onPress={() => Linking.openURL(currentMessage.mapUrl)}
+        >
+          <Text style={styles.mapLinkText}>
+            📍 Apri la mia posizione su Google Maps
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+    return null;
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
       <GiftedChat
@@ -106,7 +136,6 @@ const Chat = ({ route, navigation }) => {
         renderActions={(props) => <CustomActions {...props} onSend={onSend} />}
         renderCustomView={renderCustomView}
       />
-
       {Platform.OS === "ios" && <KeyboardAvoidingView behavior="padding" />}
     </View>
   );
@@ -120,11 +149,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "#E6E6E6",
   },
-  mapLinkText: {
-    color: "#1A1A1A",
-    fontWeight: "500",
-    textAlign: "center",
-  },
+  mapLinkText: { color: "#1A1A1A", fontWeight: "500", textAlign: "center" },
 });
 
 export default Chat;
