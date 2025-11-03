@@ -21,24 +21,55 @@ const Start = ({ navigation }) => {
   const isDark = tinycolor(bgColor).isDark();
 
   return (
-    <ImageBackground source={backgroundImage} style={styles.background}>
-      {/* Title */}
-      <Text style={styles.title}>Chat App</Text>
+    <ImageBackground
+      source={backgroundImage}
+      style={styles.background}
+      accessible={true}
+      accessibilityLabel="Background image showing abstract design for the start screen"
+    >
+      {/* Title - leggibile da TalkBack */}
+      <Text
+        style={styles.title}
+        accessible={true}
+        accessibilityLabel="Chat App title"
+        accessibilityRole="header"
+      >
+        Chat App
+      </Text>
 
       {/* Main Box */}
-      <View style={[styles.box, { backgroundColor: "rgba(255,255,255,0.9)" }]}>
+      <View
+        style={[styles.box, { backgroundColor: "rgba(255,255,255,0.9)" }]}
+        accessible={true}
+        accessibilityLabel="Main box containing name input, color options, and start button"
+      >
         {/* Name input */}
         <TextInput
-          style={[styles.input, { color: "#000" }]} // ✅ sempre testo nero
+          style={[styles.input, { color: "#000" }]} // sempre testo nero
           value={name}
           onChangeText={setName}
           placeholder="Your Name"
           placeholderTextColor="#757083"
+          accessible={true}
+          accessibilityLabel="Enter your name"
+          accessibilityHint="Type your name to identify yourself in the chat"
         />
 
         {/* Choose color */}
-        <Text style={styles.chooseColor}>Choose Background Color:</Text>
-        <View style={styles.colorWrapper}>
+        <Text
+          style={styles.chooseColor}
+          accessible={true}
+          accessibilityRole="text"
+          accessibilityLabel="Choose Background Color"
+        >
+          Choose Background Color:
+        </Text>
+
+        <View
+          style={styles.colorWrapper}
+          accessible={true}
+          accessibilityLabel="Color selection options"
+        >
           {colors.map((color) => (
             <TouchableOpacity
               key={color}
@@ -49,6 +80,11 @@ const Start = ({ navigation }) => {
               ]}
               onPress={() => setBgColor(color)}
               activeOpacity={0.8}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel={`Select background color ${color}`}
+              accessibilityState={{ selected: bgColor === color }}
+              accessibilityHint="Double tap to choose this color for the chat background"
             />
           ))}
         </View>
@@ -63,6 +99,10 @@ const Start = ({ navigation }) => {
           ]}
           onPress={() => navigation.navigate("Chat", { name, bgColor })}
           activeOpacity={0.8}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Start Chatting button"
+          accessibilityHint="Double tap to enter the chat screen"
         >
           <Text style={[styles.buttonText, { color: "#FFF" }]}>
             Start Chatting
