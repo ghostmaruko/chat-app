@@ -7,18 +7,23 @@ import {
   TouchableOpacity,
   Text,
   Linking,
+  Alert,
 } from "react-native";
-import { GiftedChat, Bubble } from "react-native-gifted-chat";
+import { GiftedChat, Bubble, InputToolbar } from "react-native-gifted-chat";
 import tinycolor from "tinycolor2";
 import CustomActions from "./CustomActions";
-import { database } from "../firebase/firebaseConfig"; // 🔹 compat
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { database } from "../firebase/firebaseConfig"; // Realtime DB import
 
-const Chat = ({ route, navigation }) => {
+// ---------- Componente Chat ----------
+const Chat = ({ route, navigation, isConnected }) => {
   const { name = "Guest", bgColor = "#FFFFFF" } = route.params || {};
   const [messages, setMessages] = useState([]);
 
+  // Per calcolare il tema (chiaro/scuro) in base al colore background scelto
   const isDark = tinycolor(bgColor).isDark();
 
+  // Definizione tema bolle
   const theme = {
     userBubble: isDark ? "#5E60CE" : "#4B7BE5",
     otherBubble: isDark ? "#E0E0E0" : "#F1F1F1",
@@ -26,31 +31,39 @@ const Chat = ({ route, navigation }) => {
     otherText: isDark ? "#1A1A1A" : "#000",
   };
 
+  // ---------- Chiave AsyncStorage ----------
+  const STORAGE_KEY = "chat_messages";
+
+  // ---------- Funzioni AsyncStorage ----------
+  const saveMessages = async (messagesToSave) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(messagesToSave));
+    } catch (error) {
+      console.log("Error saving messages:", error);
+    }
+  };
+
+  // Carica messaggi dalla cache
+  const loadCachedMessages = async () => {
+    try {
+      const cachedMessages = await AsyncStorage.getItem(STORAGE_KEY);
+      if (cachedMessages) {
+        setMessages(JSON.parse(cachedMessages));
+        console.log("💾 Loaded cached messages");
+      }
+    } catch (error) {
+      console.log("Error loading cached messages:", error);
+    }
+  };
+
+  // ---------- useEffect principale ----------
   useEffect(() => {
     navigation.setOptions({ title: name });
 
-    // Messaggi iniziali
-    setMessages([
-      {
-        _id: 2,
-        text: "You have joined the chat.",
-        createdAt: new Date(),
-        system: true,
-      },
-      {
-        _id: 1,
-        text: `Welcome to the chat, ${name}!`,
-        createdAt: new Date(),
-        user: {
-          _id: 2,
-          name: "Chat Bot",
-          avatar: "https://placeimg.com/140/140/any",
-        },
-      },
-    ]);
-
-    // 🔹 Sottoscrizione ai messaggi da Firebase
+    // Riferimento ai messaggi nel Realtime Database
     const messagesRef = database.ref("messages");
+
+    // Funzione per gestire l'aggiornamento dei messaggi
     const handleValue = (snapshot) => {
       const data = snapshot.val() || {};
       const messagesArray = Object.keys(data)
@@ -64,16 +77,30 @@ const Chat = ({ route, navigation }) => {
           },
         }))
         .sort((a, b) => b.createdAt - a.createdAt);
-      setMessages(messagesArray);
+
+      setMessages(messagesArray); // Aggiorna stato messaggi
+      saveMessages(messagesArray); // Cache aggiornata ogni volta
     };
 
-    messagesRef.on("value", handleValue);
+    // Ascolta i cambiamenti solo se connessi
+    if (isConnected) {
+      messagesRef.on("value", handleValue);
+    } else {
+      loadCachedMessages(); // Carica messaggi locali se offline
+      Alert.alert("You're offline. Messages are loaded from cache.");
+    }
 
-    // Cleanup
+    // cleanup
     return () => messagesRef.off("value", handleValue);
-  }, []);
+  }, [isConnected]);
 
+  // ---------- Inviare messaggi ----------
   const onSend = (newMessages = []) => {
+    if (isConnected === false) {
+      Alert.alert("You're offline — messages cannot be sent");
+      return;
+    }
+
     setMessages((prev) => GiftedChat.append(prev, newMessages));
 
     newMessages.forEach((msg) => {
@@ -85,6 +112,7 @@ const Chat = ({ route, navigation }) => {
     });
   };
 
+  // ---------- Personalizzazione bubble ----------
   const renderBubble = (props) => (
     <Bubble
       {...props}
@@ -109,6 +137,13 @@ const Chat = ({ route, navigation }) => {
     />
   );
 
+  // ---------- Nascondere InputToolbar se offline ----------
+  const renderInputToolbar = (props) => {
+    if (isConnected === false) return null;
+    return <InputToolbar {...props} />;
+  };
+
+  // ---------- Link a Google Maps ----------
   const renderCustomView = (props) => {
     const { currentMessage } = props;
     if (currentMessage?.location && currentMessage?.mapUrl) {
@@ -135,12 +170,14 @@ const Chat = ({ route, navigation }) => {
         renderBubble={renderBubble}
         renderActions={(props) => <CustomActions {...props} onSend={onSend} />}
         renderCustomView={renderCustomView}
+        renderInputToolbar={renderInputToolbar}
       />
       {Platform.OS === "ios" && <KeyboardAvoidingView behavior="padding" />}
     </View>
   );
 };
 
+// ---------- Styles ----------
 const styles = StyleSheet.create({
   container: { flex: 1 },
   mapLinkContainer: {
@@ -149,7 +186,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "#E6E6E6",
   },
-  mapLinkText: { color: "#1A1A1A", fontWeight: "500", textAlign: "center" },
+  mapLinkText: {
+    color: "#1A1A1A",
+    fontWeight: "500",
+    textAlign: "center",
+  },
 });
 
 export default Chat;
