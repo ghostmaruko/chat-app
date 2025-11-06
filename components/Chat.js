@@ -8,22 +8,22 @@ import {
   Text,
   Linking,
   Alert,
+  Modal,
+  Image,
 } from "react-native";
 import { GiftedChat, Bubble, InputToolbar } from "react-native-gifted-chat";
 import tinycolor from "tinycolor2";
 import CustomActions from "./CustomActions";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { database } from "../firebase/firebaseConfig"; // Realtime DB import
+import { database } from "../firebase/firebaseConfig";
 
-// ---------- Componente Chat ----------
-const Chat = ({ route, navigation, isConnected }) => {
+const Chat = ({ route, navigation, isConnected, storage }) => {
   const { name = "Guest", bgColor = "#FFFFFF" } = route.params || {};
   const [messages, setMessages] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null);
 
-  // Per calcolare il tema (chiaro/scuro) in base al colore background scelto
   const isDark = tinycolor(bgColor).isDark();
 
-  // Definizione tema bolle
   const theme = {
     userBubble: isDark ? "#5E60CE" : "#4B7BE5",
     otherBubble: isDark ? "#E0E0E0" : "#F1F1F1",
@@ -31,10 +31,8 @@ const Chat = ({ route, navigation, isConnected }) => {
     otherText: isDark ? "#1A1A1A" : "#000",
   };
 
-  // ---------- Chiave AsyncStorage ----------
   const STORAGE_KEY = "chat_messages";
 
-  // ---------- Funzioni AsyncStorage ----------
   const saveMessages = async (messagesToSave) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(messagesToSave));
@@ -43,7 +41,6 @@ const Chat = ({ route, navigation, isConnected }) => {
     }
   };
 
-  // Carica messaggi dalla cache
   const loadCachedMessages = async () => {
     try {
       const cachedMessages = await AsyncStorage.getItem(STORAGE_KEY);
@@ -56,20 +53,19 @@ const Chat = ({ route, navigation, isConnected }) => {
     }
   };
 
-  // ---------- useEffect principale ----------
   useEffect(() => {
     navigation.setOptions({ title: name });
-
-    // Riferimento ai messaggi nel Realtime Database
     const messagesRef = database.ref("messages");
 
-    // Funzione per gestire l'aggiornamento dei messaggi
     const handleValue = (snapshot) => {
       const data = snapshot.val() || {};
       const messagesArray = Object.keys(data)
         .map((key) => ({
           _id: key,
-          text: data[key].text,
+          text: data[key].text || "",
+          image: data[key].image || null,
+          location: data[key].location || null,
+          mapUrl: data[key].mapUrl || null,
           createdAt: new Date(data[key].createdAt),
           user: {
             _id: data[key].userId,
@@ -78,25 +74,22 @@ const Chat = ({ route, navigation, isConnected }) => {
         }))
         .sort((a, b) => b.createdAt - a.createdAt);
 
-      setMessages(messagesArray); // Aggiorna stato messaggi
-      saveMessages(messagesArray); // Cache aggiornata ogni volta
+      setMessages(messagesArray);
+      saveMessages(messagesArray);
     };
 
-    // Ascolta i cambiamenti solo se connessi
     if (isConnected) {
       messagesRef.on("value", handleValue);
     } else {
-      loadCachedMessages(); // Carica messaggi locali se offline
+      loadCachedMessages();
       Alert.alert("You're offline. Messages are loaded from cache.");
     }
 
-    // cleanup
     return () => messagesRef.off("value", handleValue);
   }, [isConnected]);
 
-  // ---------- Inviare messaggi ----------
   const onSend = (newMessages = []) => {
-    if (isConnected === false) {
+    if (!isConnected) {
       Alert.alert("You're offline — messages cannot be sent");
       return;
     }
@@ -104,15 +97,22 @@ const Chat = ({ route, navigation, isConnected }) => {
     setMessages((prev) => GiftedChat.append(prev, newMessages));
 
     newMessages.forEach((msg) => {
-      database.ref("messages").push({
-        text: msg.text,
+      const messageData = {
         userId: 1,
         createdAt: msg.createdAt.getTime(),
-      });
+      };
+
+      if (msg.text && msg.text.trim() !== "") {
+        messageData.text = msg.text;
+      }
+      if (msg.image) messageData.image = msg.image;
+      if (msg.location) messageData.location = msg.location;
+      if (msg.mapUrl) messageData.mapUrl = msg.mapUrl;
+
+      database.ref("messages").push(messageData);
     });
   };
 
-  // ---------- Personalizzazione bubble ----------
   const renderBubble = (props) => (
     <Bubble
       {...props}
@@ -137,13 +137,11 @@ const Chat = ({ route, navigation, isConnected }) => {
     />
   );
 
-  // ---------- Nascondere InputToolbar se offline ----------
   const renderInputToolbar = (props) => {
-    if (isConnected === false) return null;
+    if (!isConnected) return null;
     return <InputToolbar {...props} />;
   };
 
-  // ---------- Link a Google Maps ----------
   const renderCustomView = (props) => {
     const { currentMessage } = props;
     if (currentMessage?.location && currentMessage?.mapUrl) {
@@ -161,23 +159,81 @@ const Chat = ({ route, navigation, isConnected }) => {
     return null;
   };
 
+  const renderMessageImage = (props) => {
+    const { currentMessage } = props;
+    if (currentMessage?.image) {
+      return (
+        <View style={{ padding: 4 }}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => {
+              console.log("🖼️ Tap su immagine:", currentMessage._id);
+
+              setSelectedImage(currentMessage.image);
+            }}
+          >
+            <Image
+              source={{ uri: currentMessage.image }}
+              style={{
+                width: 250,
+                height: 200,
+                borderRadius: 10,
+                alignSelf: "center",
+                backgroundColor: "#000",
+              }}
+              resizeMode="cover"
+            />
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return null;
+  };
+
   return (
-    <View style={[styles.container, { backgroundColor: bgColor }]}>
-      <GiftedChat
-        messages={messages}
-        onSend={onSend}
-        user={{ _id: 1, name }}
-        renderBubble={renderBubble}
-        renderActions={(props) => <CustomActions {...props} onSend={onSend} />}
-        renderCustomView={renderCustomView}
-        renderInputToolbar={renderInputToolbar}
-      />
-      {Platform.OS === "ios" && <KeyboardAvoidingView behavior="padding" />}
-    </View>
+    <>
+      {/* 🔹 Modal: sempre in cima allo stack visivo */}
+      <Modal
+        visible={!!selectedImage}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedImage(null)}
+      >
+        <View style={styles.modalContainer}>
+          <TouchableOpacity
+            style={styles.modalBackground}
+            activeOpacity={1}
+            onPressOut={() => setSelectedImage(null)}
+          >
+            <Image
+              source={{ uri: selectedImage }}
+              style={styles.fullImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* 🔹 Chat sotto la Modal */}
+      <View style={[styles.container, { backgroundColor: bgColor }]}>
+        <GiftedChat
+          messages={messages}
+          onSend={onSend}
+          user={{ _id: 1, name }}
+          renderBubble={renderBubble}
+          renderActions={(props) => (
+            <CustomActions {...props} onSend={onSend} storage={storage} />
+          )}
+          renderCustomView={renderCustomView}
+          renderInputToolbar={renderInputToolbar}
+          renderMessageImage={renderMessageImage}
+        />
+        {Platform.OS === "ios" && <KeyboardAvoidingView behavior="padding" />}
+      </View>
+    </>
   );
 };
 
-// ---------- Styles ----------
 const styles = StyleSheet.create({
   container: { flex: 1 },
   mapLinkContainer: {
@@ -190,6 +246,42 @@ const styles = StyleSheet.create({
     color: "#1A1A1A",
     fontWeight: "500",
     textAlign: "center",
+  },
+  chatImage: {
+    width: 250,
+    height: 200,
+    borderRadius: 10,
+    margin: 5,
+    alignSelf: "center",
+  },
+  overlayContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.95)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "black",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    height: "100%",
+  },
+  fullImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "contain",
   },
 });
 

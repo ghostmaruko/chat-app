@@ -5,14 +5,17 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useNetInfo } from "@react-native-community/netinfo";
 import { getDatabase, goOffline, goOnline } from "firebase/database";
+import { getStorage } from "firebase/storage";
+import { storage } from "./firebase/firebaseConfig";
 
 // import screens
 import Start from "./components/Start";
 import Chat from "./components/Chat";
-import { app } from "./firebase/firebaseConfig"; 
+import { app } from "./firebase/firebaseConfig";
 
 const Stack = createNativeStackNavigator();
-
+/* const storage = getStorage(app);
+ */
 const App = () => {
   // Hook per connessione
   const connectionStatus = useNetInfo();
@@ -41,6 +44,7 @@ const App = () => {
             <Chat
               {...props}
               isConnected={connectionStatus.isConnected}
+              storage={storage}
             />
           )}
         </Stack.Screen>
