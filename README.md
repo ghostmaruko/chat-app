@@ -1,21 +1,21 @@
-# Chat App (React Native + Expo)
+## Chat App (React Native + Expo + Firebase)
 
-A simple **mobile chat application** built with **React Native** and **Expo** as part of the CareerFoundry Full-Stack Web Development Program — Achievement 5.1: _Building Native Applications with JavaScript_.
+A real-time mobile chat application built with React Native and Expo, as part of the CareerFoundry Full-Stack Web Development Program — Achievement 5: Building Native Applications with JavaScript.
 
-This is the **first milestone** of the Chat App project.  
-In this task, the focus is on creating the **Start Screen** and setting up navigation to the **Chat Screen**.
+The app enables users to chat in real time, share images, take photos, send their geolocation, and store messages securely in Google Firebase.
 
 ---
 
 ## Overview
 
-The app allows users to:
-
-- Enter their **name**
-- Choose a **background color** for the chat screen
-- Navigate to the chat interface (implemented in later Achievements)
-
-The **Chat Screen** displays the user’s name in the header and applies the selected background color to the chat interface.
+- The app allows users to:
+- Enter their name and choose a background color
+- Send and receive text messages
+- Pick images from the library and send them
+- Take photos using the device’s camera and share them
+- Share their current location (displayed as a map in the chat)
+- Work offline — messages are cached locally and synced when back online
+- Store chat data in Firebase Firestore and media in Firebase Storage
 
 ---
 
@@ -33,16 +33,22 @@ The **Chat Screen** displays the user’s name in the header and applies the sel
 
 ### Start Screen
 
-- `TextInput` for user’s name
-- Four color options for chat background (using `TouchableOpacity`)
-- “Start Chatting” button that navigates to the chat screen
-- Background image (`ImageBackground`) as per the design brief
+- Input for username
+- Background color selection
+- Button to start chatting
+- Background image with accessible color option
 
 ### Chat Screen
 
-- Displays user’s name in navigation bar
-- Background color changes based on selected color
-- Simple text placeholder for chat UI (to be implemented in next exercise)
+- Real-time chat interface using Gifted Chat
+- Displays messages, images, and shared locations
+- Custom CustomActions component for:
+  📸 Taking photos with the camera
+  🖼️ Picking images from gallery
+  📍 Sharing location
+- Images and photos uploaded to Firebase Storage
+- Location displayed via MapView in message bubbles
+- Accessibility support (for the ActionSheet button)
 
 ---
 
@@ -51,10 +57,14 @@ The **Chat Screen** displays the user’s name in the header and applies the sel
 chat-app/
 ├── App.js
 ├── components/
-│ ├── Start.js # Start screen (name input + color selection)
-│ └── Chat.js # Chat screen (receives name and color)
+│ ├── Start.js # Start screen (user input + color selection)
+│ ├── Chat.js # Main chat screen
+│ └── CustomActions.js # Custom ActionSheet (image/photo/location)
 ├── assets/
-│ └── background-image.png
+│ ├── background-image.png
+│ └── icon.png
+├── firebase/
+│ └── config.js # Firebase initialization (Firestore + Storage)
 ├── package.json
 └── README.md
 
@@ -62,21 +72,53 @@ chat-app/
 
 ### 1. Clone the repository
 
-git clone https://github.com/<your-username>/chat-app.git
+git clone https://github.com/ghostmaruko/chat-app.git
 cd new-chat-app
 
 ### 2. Install dependencies
 
 npm install
 
-### 3. Start Expo
+### 3. Configure Firebase
 
-npx expo start
+Create a new Firebase project on Firebase Console
+
+In your project folder, create a file:
+/firebase/config.js
+----------------------------------------------------
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+
+const firebaseConfig = {
+apiKey: "YOUR_API_KEY",
+authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+projectId: "YOUR_PROJECT_ID",
+storageBucket: "YOUR_PROJECT_ID.appspot.com",
+messagingSenderId: "XXXXXXX",
+appId: "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+----------------------------------------------------
 
 ### 4. Run the app
 
+- npx expo start
 - On Android emulator: press a
 - On physical device: scan the QR code in Expo Go
+
+### Permissions Required
+
+This app uses the following permissions:
+
+- CAMERA → to take photos
+- MEDIA_LIBRARY → to pick images
+- LOCATION → to share user’s geolocation
+
+Expo will automatically request these permissions at runtime.
 
 ### Design
 
@@ -85,12 +127,27 @@ Background image and color palette are provided in the project’s assets.
 
 Color options:
 
-Name            HEX
-Dark            #090C08
-Purple          #474056
-Blue Gray       #8A95A5
-Green Gray      #B9C6AE
+Name HEX
+Dark #090C08
+Purple #474056
+Blue Gray #8A95A5
+Green Gray #B9C6AE
 
+### Testing Checklist
+
+✅ Enter the chat and send text messages
+✅ Pick and send an image from library
+✅ Take and send a photo with the camera
+✅ Share current geolocation (map preview appears)
+✅ Verify messages appear in Firestore
+✅ Verify uploaded images in Firebase Storage
+
+### Documentation & Accessibility
+
+    - Code includes comments explaining complex logic (Firebase upload, geolocation)
+    - Action buttons include accessibility labels for screen readers
+    - All assets and dependencies are included in the repo
+    - README.md tested by cloning repo and following setup steps
 
 ### Learning Objectives
 
@@ -100,3 +157,11 @@ Green Gray      #B9C6AE
 - Work with ImageBackground and TouchableOpacity
 - Pass params between screens (name, color)
 - Apply custom styling to UI elements
+
+### Bonus (Optional)
+
+You can extend the app with:
+
+🎙️ Audio recording & playback
+📂 Cloud sync improvements
+🌙 Dark mode support
