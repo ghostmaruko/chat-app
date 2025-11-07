@@ -200,6 +200,7 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
         onRequestClose={() => setSelectedImage(null)}
       >
         <View style={styles.modalContainer}>
+          {/* Sfondo tappabile per chiudere */}
           <TouchableOpacity
             style={styles.modalBackground}
             activeOpacity={1}
@@ -210,6 +211,13 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
               style={styles.fullImage}
               resizeMode="contain"
             />
+          </TouchableOpacity>
+          {/* X in alto a destra */}
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setSelectedImage(null)}
+          >
+            <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -282,6 +290,20 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     resizeMode: "contain",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 40, // distanza dall’alto (puoi regolare per iOS/Android)
+    right: 20, // distanza da destra
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 20,
+    padding: 8,
+    zIndex: 10, // per stare sopra l’immagine
+  },
+  closeButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });
 
