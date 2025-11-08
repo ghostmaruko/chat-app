@@ -17,34 +17,16 @@ import CustomActions from "./CustomActions";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { database } from "../firebase/firebaseConfig";
 
-// ==========================
-// 🔹 Chat Component
-// ==========================
 const Chat = ({ route, navigation, isConnected, storage }) => {
   const { name = "Guest", bgColor = "#FFFFFF" } = route.params || {};
-
-  // ==========================
-  // 🔹 Stati principali
-  // ==========================
   const [messages, setMessages] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
-
-  // ==========================
-  // 🔹 BOT STATE
-  // ==========================
   const BOT_ID = 2;
   const BOT_NAME = "Jacob";
   const [botStepIndex, setBotStepIndex] = useState(0);
   const [awaitingUserResponse, setAwaitingUserResponse] = useState(false);
-
-  // ==========================
-  // 🔹 DEMO_MODE
-  // ==========================
   const DEMO_MODE = true;
 
-  // ==========================
-  // 🔹 Tema chat
-  // ==========================
   const isDark = tinycolor(bgColor).isDark();
   const theme = {
     userBubble: isDark ? "#5E60CE" : "#4B7BE5",
@@ -55,9 +37,6 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
 
   const STORAGE_KEY = "chat_messages";
 
-  // ==========================
-  // 🔹 Salva messaggi in AsyncStorage
-  // ==========================
   const saveMessages = async (messagesToSave) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(messagesToSave));
@@ -66,9 +45,6 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
     }
   };
 
-  // ==========================
-  // 🔹 Carica messaggi da cache
-  // ==========================
   const loadCachedMessages = async () => {
     try {
       const cachedMessages = await AsyncStorage.getItem(STORAGE_KEY);
@@ -81,55 +57,65 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
     }
   };
 
-  // ==========================
-  // 🔹 Bot messages
-  // ==========================
   const BOT_MESSAGES = [
     {
       id: 0,
       text: `Ciao ${name}! 👋 Benvenuto nella chat demo. Io sono ${BOT_NAME}.`,
       awaitResponse: true,
+      expectedInput: "text",
+      expectedSource: null,
     },
     {
       id: 1,
       text: `Piacere di conoscerti, ${name}! Vuoi provare la simulazione dell'app?`,
       awaitResponse: true,
+      expectedInput: "text",
+      expectedSource: null,
     },
     {
       id: 2,
       text: "Fantastico! Iniziamo la simulazione demo.",
       awaitResponse: true,
+      expectedInput: "text",
+      expectedSource: null,
     },
     {
       id: 3,
       text: "Primo test: Invia un'immagine dalla galleria.",
       awaitResponse: true,
+      expectedInput: "image",
+      expectedSource: "gallery",
     },
     {
       id: 4,
       text: "Perfetto! Ora prova a scattare una foto con la fotocamera.",
       awaitResponse: true,
+      expectedInput: "image",
+      expectedSource: "camera",
     },
     {
       id: 5,
       text: "Infine, condividi la tua posizione.",
       awaitResponse: true,
+      expectedInput: "location",
+      expectedSource: null,
     },
     {
       id: 6,
       text: "Ottimo! Questo conclude la simulazione demo.",
       awaitResponse: false,
+      expectedInput: null,
+      expectedSource: null,
     },
     {
       id: 7,
       text: "Ok, fai come vuoi allora. 😉",
       awaitResponse: false,
+      expectedInput: null,
+      expectedSource: null,
     },
   ];
 
-  // ==========================
-  // 🔹 Invia messaggio bot
-  // ==========================
   const sendBotMessage = (index) => {
     if (index >= BOT_MESSAGES.length) return;
 
@@ -142,18 +128,11 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
 
     setTimeout(() => {
       setMessages((prev) => GiftedChat.append(prev, [botMsg]));
-
-      if (BOT_MESSAGES[index].awaitResponse) {
-        setAwaitingUserResponse(true);
-      } else {
-        setBotStepIndex(index + 1);
-      }
-    }, 1000); // 1 secondo di ritardo
+      if (BOT_MESSAGES[index].awaitResponse) setAwaitingUserResponse(true);
+      else setBotStepIndex(index + 1);
+    }, 1000);
   };
 
-  // ==========================
-  // 🔹 Procedi al prossimo step del bot
-  // ==========================
   const proceedBotStep = () => {
     setAwaitingUserResponse(false);
     const nextIndex = botStepIndex + 1;
@@ -161,65 +140,52 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
     sendBotMessage(nextIndex);
   };
 
-  // ==========================
-  // 🔹 Gestione risposta utente
-  // ==========================
   const handleUserResponse = (text) => {
     const answer = text?.toLowerCase().trim();
-
     if (botStepIndex === 0) {
-      // dopo il messaggio di benvenuto, risponde al saluto
-      const nextIndex = 1;
-      setBotStepIndex(nextIndex);
-      sendBotMessage(nextIndex);
+      setBotStepIndex(1);
+      sendBotMessage(1);
     } else if (botStepIndex === 1) {
-      if (
-        [
-          "sì",
-          "si",
-          "yes",
-          "certo",
-          "ok",
-          "va bene",
-          "sure",
-          "of course",
-          "yep",
-          "affirmative",
-          "absolutely",
-          "eja",
-          "claro",
-          "chiaro",
-          "d'accordo",
-          "ja",
-          "oui",
-          "da",
-          "hai",
-          "si certo",
-          "si va bene",
-          "si ok",
-        ].includes(answer)
-      ) {
-        proceedBotStep(); // va al messaggio successivo
-      } else {
-        sendBotMessage(7); // messaggio di chiusura
-      }
+      const positiveAnswers = [
+        "sì",
+        "si",
+        "yes",
+        "certo",
+        "ok",
+        "va bene",
+        "sure",
+        "of course",
+        "yep",
+        "affirmative",
+        "absolutely",
+        "eja",
+        "claro",
+        "chiaro",
+        "d'accordo",
+        "ja",
+        "oui",
+        "da",
+        "hai",
+        "si certo",
+        "si va bene",
+        "si ok",
+        "si chiaro",
+        "si d'accordo",
+        "ovviamente",
+      ];
+      if (positiveAnswers.includes(answer)) proceedBotStep();
+      else sendBotMessage(7);
     } else {
       proceedBotStep();
     }
   };
 
-  // ==========================
-  // 🔹 Avvia demo bot
-  // ==========================
   const runBotDemo = () => {
-    setMessages([]); // solo alla prima apertura
-    sendBotMessage(0);
+    setMessages([]);
     setBotStepIndex(0);
+    sendBotMessage(0);
   };
 
-  // ==========================
-  // 🔹 useEffect principale
-  // ==========================
   useEffect(() => {
     navigation.setOptions({ title: name });
     const messagesRef = database.ref("messages");
@@ -258,10 +224,10 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
     return () => messagesRef.off("value", handleValue);
   }, [isConnected]);
 
-  // ==========================
-  // 🔹 onSend messaggi utente
-  // ==========================
   const onSend = (newMessages = []) => {
+    console.log("onSend triggered");
+    console.log("New Messages:", JSON.stringify(newMessages, null, 2));
+
     setMessages((prevMessages) => GiftedChat.append(prevMessages, newMessages));
 
     if (!DEMO_MODE && isConnected) {
@@ -271,23 +237,58 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
         if (msg.image) messageData.image = msg.image;
         if (msg.location) messageData.location = msg.location;
         if (msg.mapUrl) messageData.mapUrl = msg.mapUrl;
-
         database.ref("messages").push(messageData);
       });
     }
 
-    // 🔹 Gestione bot DEMO_MODE
-    if (DEMO_MODE && awaitingUserResponse && newMessages[0]?.text) {
+    if (DEMO_MODE && awaitingUserResponse) {
+      const userMsg = newMessages[0];
+      const currentStep = BOT_MESSAGES[botStepIndex];
+      console.log("🤖 Current bot step:", botStepIndex, currentStep.text);
+      console.log("🧩 Expected input:", currentStep.expectedInput);
+      console.log("🧩 Expected source:", currentStep.expectedSource);
+
+      let userInputType = null;
+      let userSource = null;
+
+      if (userMsg.text && userMsg.text.trim() !== "") userInputType = "text";
+      else if (userMsg.image) {
+        userInputType = "image";
+        userSource = userMsg.source || null;
+      } else if (userMsg.location) userInputType = "location";
+      else userInputType = "invalid";
+      console.log("📨 User input type:", userInputType);
+      console.log("📨 User source:", userSource);
+
+      const expectedInput = currentStep.expectedInput;
+      const expectedSource = currentStep.expectedSource;
+
+      if (expectedInput && userInputType !== expectedInput) {
+        Alert.alert(
+          "Input non valido",
+          `Attenzione! Questo step richiede un tipo di messaggio: ${expectedInput}. Ritenta con il tipo corretto.`
+        );
+        return;
+      }
+
+      if (expectedSource && userSource !== expectedSource) {
+        Alert.alert(
+          "Input non valido",
+          `Attenzione! Questo step richiede un messaggio da: ${expectedSource}. Ritenta con il tipo corretto.`
+        );
+        return;
+      }
+      console.log("✅ User input is valid for this step.");
+
       setAwaitingUserResponse(false);
+
       setTimeout(() => {
-        handleUserResponse(newMessages[0].text);
+        if (userInputType === "text") handleUserResponse(userMsg.text);
+        else proceedBotStep();
       }, 800);
     }
   };
 
-  // ==========================
-  // 🔹 renderBubble
-  // ==========================
   const renderBubble = (props) => (
     <Bubble
       {...props}
@@ -323,8 +324,7 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
   const renderInputToolbar = (props) =>
     !isConnected ? null : <InputToolbar {...props} />;
 
-  const renderCustomView = (props) => {
-    const { currentMessage } = props;
+  const renderCustomView = ({ currentMessage }) => {
     if (currentMessage?.location && currentMessage?.mapUrl) {
       return (
         <TouchableOpacity
@@ -340,10 +340,8 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
     return null;
   };
 
-  const renderMessageImage = (props) => {
-    const { currentMessage } = props;
+  const renderMessageImage = ({ currentMessage }) => {
     if (!currentMessage?.image) return null;
-
     return (
       <View style={{ padding: 4 }}>
         <TouchableOpacity
@@ -360,9 +358,6 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
     );
   };
 
-  // ==========================
-  // 🔹 Render principale
-  // ==========================
   return (
     <>
       <Modal
@@ -411,9 +406,6 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
   );
 };
 
-// ==========================
-// 🔹 Stili
-// ==========================
 const styles = StyleSheet.create({
   container: { flex: 1 },
   mapLinkContainer: {

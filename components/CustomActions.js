@@ -5,58 +5,13 @@ import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 
 const CustomActions = ({ onSend, storage }) => {
-  const buildImageMessage = (uri) => ({
+  const buildImageMessage = (uri, source) => ({
     _id: Date.now(),
     createdAt: new Date(),
     user: { _id: 1 },
     image: uri,
+    source, // gallery o camera
   });
-
-  /* // 🔼 Upload immagine su Firebase Storage
-  const uploadImage = async (uri) => {
-    try {
-      console.log("Inizio uploadImage:", uri);
-      // 1️⃣ Convertire in blob
-      Alert.alert("Step", "Inizio uploadImage");
-      const response = await fetch(uri);
-      Alert.alert("Step", "Dopo fetch()");
-      const blob = await response.blob();
-      Alert.alert("Step", "Dopo blob()");
-
-      // 2️⃣ Generare nome file univoco
-      const filename = `chatImages/${Date.now()}.jpg`;
-
-      // 3️⃣ Caricare su Firebase
-      const ref = storage.ref().child(filename);
-      const snapshot = await ref.put(blob);
-      await ref.put(blob);
-
-      Alert.alert("✅ Upload", "Immagine caricata su Firebase Storage!");
-      console.log("✅ Upload completato:", snapshot.metadata.fullPath);
-      // (Prossimo step: getDownloadURL)
-
-      const downloadURL = await ref.getDownloadURL();
-      console.log("Download URL:", downloadURL);
-      return downloadURL; // lo restituiamo per usarlo nel messaggio
-      return null;
-    } catch (error) {
-      console.error("Errore uploadImage:", error.code, error.message);
-      Alert.alert("❌ Errore", error.message || "Upload immagine fallito.");
-      return null;
-    }
-  }; */
-
-  /* const uploadImage = async (uri) => {
-    try {
-      console.log("⚙️ Mock upload attivo — uso URI locale:", uri);
-      // Simula un breve ritardo per test realistico
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      return uri; // restituisce direttamente l'URI locale
-    } catch (error) {
-      console.error("Errore mock upload:", error);
-      return null;
-    }
-  }; */
 
   const uploadImage = async (uri) => {
     try {
@@ -64,12 +19,10 @@ const CustomActions = ({ onSend, storage }) => {
       const response = await fetch(uri);
       const blob = await response.blob();
 
-      // Convertiamo il blob in Base64 per farlo visualizzare
       const reader = new FileReader();
       return await new Promise((resolve) => {
         reader.onloadend = () => {
-          const base64data = reader.result;
-          resolve(base64data); // restituisce stringa base64
+          resolve(reader.result); // base64 string
         };
         reader.readAsDataURL(blob);
       });
@@ -98,7 +51,7 @@ const CustomActions = ({ onSend, storage }) => {
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: "images",
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 0.8,
       });
@@ -107,13 +60,13 @@ const CustomActions = ({ onSend, storage }) => {
         const uri = result.assets[0].uri;
         const remoteURL = await uploadImage(uri);
         if (remoteURL) {
-          onSend([buildImageMessage(remoteURL)]);
+          onSend([buildImageMessage(remoteURL, "gallery")]); // ✅ source sempre "gallery"
         } else {
           Alert.alert("Errore", "Upload fallito 😞");
         }
       }
     } catch (error) {
-      console.error("Errore nel pickImage:", error);
+      console.error("Errore pickImage:", error);
     }
   };
 
@@ -135,13 +88,13 @@ const CustomActions = ({ onSend, storage }) => {
         const uri = result.assets[0].uri;
         const remoteURL = await uploadImage(uri);
         if (remoteURL) {
-          onSend([buildImageMessage(remoteURL)]);
+          onSend([buildImageMessage(remoteURL, "camera")]); // source sempre "camera"
         } else {
           Alert.alert("Errore", "Upload fallito 😞");
         }
       }
     } catch (error) {
-      console.log("takePhoto error", error);
+      console.error("Errore takePhoto:", error);
     }
   };
 
