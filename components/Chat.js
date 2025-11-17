@@ -16,6 +16,7 @@ import tinycolor from "tinycolor2";
 import CustomActions from "./CustomActions";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { database } from "../firebase/firebaseConfig";
+import MapView, { Marker } from "react-native-maps";
 
 const Chat = ({ route, navigation, isConnected, storage }) => {
   const { name = "Guest", bgColor = "#FFFFFF" } = route.params || {};
@@ -65,7 +66,6 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
           text: data[key].text || "",
           image: data[key].image || null,
           location: data[key].location || null,
-          mapUrl: data[key].mapUrl || null,
           createdAt: new Date(data[key].createdAt),
           user: {
             _id: data[key].userId,
@@ -102,12 +102,14 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
         createdAt: msg.createdAt.getTime(),
       };
 
-      if (msg.text && msg.text.trim() !== "") {
-        messageData.text = msg.text;
-      }
+      if (msg.text && msg.text.trim() !== "") messageData.text = msg.text;
       if (msg.image) messageData.image = msg.image;
-      if (msg.location) messageData.location = msg.location;
-      if (msg.mapUrl) messageData.mapUrl = msg.mapUrl;
+      if (msg.location) {
+        messageData.location = {
+          latitude: msg.location.latitude,
+          longitude: msg.location.longitude,
+        };
+      }
 
       database.ref("messages").push(messageData);
     });
@@ -142,20 +144,49 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
     return <InputToolbar {...props} />;
   };
 
+  const openMap = (latitude, longitude) => {
+    const url = Platform.select({
+      ios: `http://maps.apple.com/?ll=${latitude},${longitude}`,
+      android: `https://www.google.com/maps?q=${latitude},${longitude}`,
+    });
+    Linking.openURL(url).catch((err) => {
+      console.error("Errore aprendo Maps:", err);
+      Alert.alert("Errore", "Impossibile aprire la mappa");
+    });
+  };
+
   const renderCustomView = (props) => {
     const { currentMessage } = props;
-    if (currentMessage?.location && currentMessage?.mapUrl) {
+
+    if (
+      currentMessage?.location?.latitude != null &&
+      currentMessage?.location?.longitude != null
+    ) {
+      const { latitude, longitude } = currentMessage.location;
       return (
         <TouchableOpacity
-          style={styles.mapLinkContainer}
-          onPress={() => Linking.openURL(currentMessage.mapUrl)}
+          onPress={() => openMap(latitude, longitude)}
+          style={styles.mapBubble}
         >
-          <Text style={styles.mapLinkText}>
-            📍 Apri la mia posizione su Google Maps
-          </Text>
+          <MapView
+            style={styles.map}
+            initialRegion={{
+              latitude,
+              longitude,
+              latitudeDelta: 0.005,
+              longitudeDelta: 0.005,
+            }}
+            scrollEnabled={false}
+            zoomEnabled={false}
+            pitchEnabled={false}
+            rotateEnabled={false}
+          >
+            <Marker coordinate={{ latitude, longitude }} />
+          </MapView>
         </TouchableOpacity>
       );
     }
+
     return null;
   };
 
@@ -166,11 +197,7 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
         <View style={{ padding: 4 }}>
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => {
-              console.log("🖼️ Tap su immagine:", currentMessage._id);
-
-              setSelectedImage(currentMessage.image);
-            }}
+            onPress={() => setSelectedImage(currentMessage.image)}
           >
             <Image
               source={{ uri: currentMessage.image }}
@@ -192,7 +219,6 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
 
   return (
     <>
-      {/* 🔹 Modal: sempre in cima allo stack visivo */}
       <Modal
         visible={!!selectedImage}
         transparent={true}
@@ -200,7 +226,6 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
         onRequestClose={() => setSelectedImage(null)}
       >
         <View style={styles.modalContainer}>
-          {/* Sfondo tappabile per chiudere */}
           <TouchableOpacity
             style={styles.modalBackground}
             activeOpacity={1}
@@ -212,7 +237,6 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
               resizeMode="contain"
             />
           </TouchableOpacity>
-          {/* X in alto a destra */}
           <TouchableOpacity
             style={styles.closeButton}
             onPress={() => setSelectedImage(null)}
@@ -222,7 +246,6 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
         </View>
       </Modal>
 
-      {/* 🔹 Chat sotto la Modal */}
       <View style={[styles.container, { backgroundColor: bgColor }]}>
         <GiftedChat
           messages={messages}
@@ -244,34 +267,15 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  mapLinkContainer: {
-    padding: 10,
-    margin: 5,
-    borderRadius: 10,
-    backgroundColor: "#E6E6E6",
+  mapBubble: {
+    borderRadius: 12,
+    overflow: "hidden",
+    marginVertical: 5,
+    alignSelf: "flex-start", // o flex-end a seconda del lato
   },
-  mapLinkText: {
-    color: "#1A1A1A",
-    fontWeight: "500",
-    textAlign: "center",
-  },
-  chatImage: {
+  map: {
     width: 250,
-    height: 200,
-    borderRadius: 10,
-    margin: 5,
-    alignSelf: "center",
-  },
-  overlayContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.95)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000,
+    height: 150,
   },
   modalContainer: {
     flex: 1,
@@ -293,12 +297,12 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: "absolute",
-    top: 40, // distanza dall’alto (puoi regolare per iOS/Android)
-    right: 20, // distanza da destra
+    top: 40,
+    right: 20,
     backgroundColor: "rgba(0,0,0,0.5)",
     borderRadius: 20,
     padding: 8,
-    zIndex: 10, // per stare sopra l’immagine
+    zIndex: 10,
   },
   closeButtonText: {
     color: "white",
