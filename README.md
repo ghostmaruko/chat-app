@@ -171,8 +171,6 @@ You can extend the app with:
 
 ## Demo (GIF)
 
-<!-- ![App Demo](./screenshot/chat.gif) -->
-
 <p align="center">
-  <img src="./screenshot/chat.gif" width="350" />
+  <img src="./screenshot/chat.gif" width="300" />
 </p>
