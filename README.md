@@ -1,6 +1,6 @@
 ## Chat App (React Native + Expo + Firebase)
 
-A real-time mobile chat application built with React Native and Expo, as part of the CareerFoundry Full-Stack Web Development Program — Achievement 5: Building Native Applications with JavaScript.
+A real-time mobile chat application built with React Native and Expo, developed as part of the CareerFoundry Full-Stack Web Development Program — Achievement 5: Building Native Applications with JavaScript.
 
 The app enables users to chat in real time, share images, take photos, send their geolocation, and store messages securely in Google Firebase.
 
@@ -8,15 +8,14 @@ The app enables users to chat in real time, share images, take photos, send thei
 
 ## Overview
 
-- The app allows users to:
-- Enter their name and choose a background color
+- Enter your name and choose a background color
 - Send and receive text messages
-- Pick images from the library and send them
-- Take photos using the device’s camera and share them
-- Share their current location (displayed as a map in the chat)
-- Work offline — messages are cached locally and synced when back online
-- Store chat data in Firebase Firestore and media in Firebase Storage
-
+- Pick and send images
+- Take photos using the device’s camera
+- Share your current location (displayed on a map)
+- Offline support — messages are cached locally
+- Chat data stored in Firebase Firestore + media in Firebase Storage
+- Anonymous authentication via Firebase Auth
 ---
 
 ## 🛠️ Built With
@@ -36,19 +35,31 @@ The app enables users to chat in real time, share images, take photos, send thei
 - Input for username
 - Background color selection
 - Button to start chatting
-- Background image with accessible color option
+- Fully styled according to CareerFoundry design brief
 
 ### Chat Screen
 
 - Real-time chat interface using Gifted Chat
-- Displays messages, images, and shared locations
-- Custom CustomActions component for:
-  📸 Taking photos with the camera
-  🖼️ Picking images from gallery
-  📍 Sharing location
-- Images and photos uploaded to Firebase Storage
-- Location displayed via MapView in message bubbles
-- Accessibility support (for the ActionSheet button)
+- Supports:
+    📸 Taking photos with the camera
+    🖼️ Picking images from gallery
+    📍 Sharing geolocation (MapView bubble)
+- Custom ActionSheet with accessible buttons
+- Local caching for offline usage
+- Firebase Storage integration for media
+
+### Work in Progress: Chatbot Simulation
+
+We are actively developing an optional chatbot mode that simulates a real conversation partner.
+
+This upcoming feature will:
+
+- Automatically reply to messages
+- Provide simple conversational logic
+- Help users test the chat experience without a second device
+- Be fully integrated into the existing Gifted Chat interface
+
+The bot is being implemented using local JS logic and can later be enhanced with AI-based responses.
 
 ---
 
@@ -68,47 +79,28 @@ chat-app/
 ├── package.json
 └── README.md
 
+
 ## Installation & Setup
 
 ### 1. Clone the repository
 
-git clone https://github.com/ghostmaruko/chat-app.git
-cd new-chat-app
+  git clone https://github.com/ghostmaruko/chat-app.git
+  cd new-chat-app
 
 ### 2. Install dependencies
 
-npm install
+  npm install
 
 ### 3. Configure Firebase
 
 Create a new Firebase project on Firebase Console
 
-In your project folder, create a file:
-/firebase/config.js
-----------------------------------------------------
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
-
-const firebaseConfig = {
-apiKey: "YOUR_API_KEY",
-authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-projectId: "YOUR_PROJECT_ID",
-storageBucket: "YOUR_PROJECT_ID.appspot.com",
-messagingSenderId: "XXXXXXX",
-appId: "YOUR_APP_ID"
-};
-
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-----------------------------------------------------
-
 ### 4. Run the app
+  npx expo start
+- Press a for Android emulator
+- Scan QR code with Expo Go on mobile
 
-- npx expo start
-- On Android emulator: press a
-- On physical device: scan the QR code in Expo Go
+---
 
 ### Permissions Required
 
