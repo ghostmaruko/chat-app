@@ -112,6 +112,8 @@ This app uses the following permissions:
 
 Expo will automatically request these permissions at runtime.
 
+---
+
 ### Design
 
 The layout and color scheme follow the official CareerFoundry Chat App design brief.
@@ -125,6 +127,8 @@ Purple #474056
 Blue Gray #8A95A5
 Green Gray #B9C6AE
 
+---
+
 ### Testing Checklist
 
 ✅ Enter the chat and send text messages
@@ -134,6 +138,8 @@ Green Gray #B9C6AE
 ✅ Verify messages appear in Firestore
 ✅ Verify uploaded images in Firebase Storage
 
+---
+
 ### Documentation & Accessibility
 
     - Code includes comments explaining complex logic (Firebase upload, geolocation)
@@ -141,14 +147,15 @@ Green Gray #B9C6AE
     - All assets and dependencies are included in the repo
     - README.md tested by cloning repo and following setup steps
 
+---
+
 ### Learning Objectives
 
-- Understand how to build React Native apps with Expo
-- Implement navigation using @react-navigation/native
-- Use Flexbox for mobile layout
-- Work with ImageBackground and TouchableOpacity
-- Pass params between screens (name, color)
-- Apply custom styling to UI elements
+- Code includes explanatory comments
+- Accessible ActionSheet buttons
+- Setup verified on fresh installations
+
+---
 
 ### Bonus (Optional)
 
@@ -157,3 +164,10 @@ You can extend the app with:
 🎙️ Audio recording & playback
 📂 Cloud sync improvements
 🌙 Dark mode support
+
+---
+
+
+## Demo (GIF)
+
+![App Demo](./screenshot/chat.gif)
