@@ -16,6 +16,7 @@ The app enables users to chat in real time, share images, take photos, send thei
 - Offline support — messages are cached locally
 - Chat data stored in Firebase Firestore + media in Firebase Storage
 - Anonymous authentication via Firebase Auth
+
 ---
 
 ## 🛠️ Built With
@@ -41,9 +42,9 @@ The app enables users to chat in real time, share images, take photos, send thei
 
 - Real-time chat interface using Gifted Chat
 - Supports:
-    📸 Taking photos with the camera
-    🖼️ Picking images from gallery
-    📍 Sharing geolocation (MapView bubble)
+  📸 Taking photos with the camera
+  🖼️ Picking images from gallery
+  📍 Sharing geolocation (MapView bubble)
 - Custom ActionSheet with accessible buttons
 - Local caching for offline usage
 - Firebase Storage integration for media
@@ -79,24 +80,25 @@ chat-app/
 ├── package.json
 └── README.md
 
-
 ## Installation & Setup
 
 ### 1. Clone the repository
 
-  git clone https://github.com/ghostmaruko/chat-app.git
-  cd new-chat-app
+git clone https://github.com/ghostmaruko/chat-app.git
+cd new-chat-app
 
 ### 2. Install dependencies
 
-  npm install
+npm install
 
 ### 3. Configure Firebase
 
 Create a new Firebase project on Firebase Console
 
 ### 4. Run the app
-  npx expo start
+
+npx expo start
+
 - Press a for Android emulator
 - Scan QR code with Expo Go on mobile
 
@@ -167,7 +169,10 @@ You can extend the app with:
 
 ---
 
-
 ## Demo (GIF)
 
-![App Demo](./screenshot/chat.gif)
+<!-- ![App Demo](./screenshot/chat.gif) -->
+
+<p align="center">
+  <img src="./screenshot/chat.gif" width="350" />
+</p>
